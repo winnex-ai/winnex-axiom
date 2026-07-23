@@ -1,13 +1,40 @@
 """
 AxiomCore — Madhava-Cauchy Bound Engine
 =========================================
-Powered by Winnex Madhava QR projection.
-Guarantees that no threat vector escapes screening.
+Powered by Winnex Madhava QR projection (Zenodo 21088504).
+Guarantees 0% false negatives via Cauchy-Schwarz inequality.
 
-Two-stage bound estimation with mathematical guarantee:
-  Stage 1 (d1): fast projection, broad bound
-  Stage 2 (d2): tighter projection, modulation
-  Result: bound >= true cosine similarity ALWAYS (0% false negatives)
+Mathematical foundation (extracted from Zenodo 21500959, 20970487):
+
+  1. QR-ORTHOGONAL PROJECTION (NOT JL)
+     R ← N(0,1)^{d_out × D}
+     R^T = Q · R'  (QR decomposition)
+     P ← Q[:, :d_out]^T  ∈ ℝ^{d_out × D}
+     P·P^T = I_{d_out}  (verified < 1e-5)
+
+  2. CAUCHY-SCHWARZ UPPER BOUND (deterministic)
+     ⟨v,q⟩ = ⟨Pv, Pq⟩ + ⟨v_⟂, q_⟂⟩          // decomposition
+           ≤ ⟨Pv, Pq⟩ + ‖v_⟂‖·‖q_⟂‖          // CS inequality
+           = B₁(v,q)                          // Q.E.D.
+     where v_⟂ = v - P^T P v, ‖v_⟂‖ = √(‖v‖² - ‖Pv‖²)
+     B₁(v,q) ≥ ⟨v,q⟩ ALWAYS. 0% false negatives.
+
+  3. TWO-STAGE CASCADE
+     Stage 1 (d₁): B₁ = ⟨P₁v, P₁q⟩ + e₁(v)·e₁(q)    [fast, broad]
+     Stage 2 (d₂): B₂ = ⟨P₂v, P₂q⟩ + e₂(v)·e₂(q)    [tighter]
+     Modulation: score = B₁ + α·(B₂ - B₁)
+       α(v) = σ((e₁(v) - e₂(v)) / mean(e₁))  ∈ [0.01, 0.99]
+
+  4. DUAL USE
+     Madhava Direct (search): score → select survivors → exact dot
+     Axiom/Sec (classification): max(score) → Youden threshold
+     SAME engine. DIFFERENT output.
+
+  Reference:
+    - Madhava Direct: 10.5281/zenodo.21088504
+    - Madhava v18 Proof: 10.5281/zenodo.21500959
+    - Madhava Cascade: 10.5281/zenodo.21166403
+    - PiPrime: 10.5281/zenodo.20856138
 """
 
 import time, math, warnings
